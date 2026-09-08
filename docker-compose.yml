@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: smartshop-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-smartshop_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_here}
+      POSTGRES_DB: ${POSTGRES_DB:-smartshop_ai_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smartshop_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartshop-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: smartshop-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_password_here}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartshop-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartshop-backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-smartshop_user}:${POSTGRES_PASSWORD:-secure_password_here}@postgres:5432/${POSTGRES_DB:-smartshop_ai_db}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password_here}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your_super_secret_jwt_key}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ML_SERVICE_URL: http://ml-service:5000
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+    networks:
+      - smartshop-network
+
+  # ML Service (Python)
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: smartshop-ml-service
+    environment:
+      FLASK_ENV: development
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./ml-service:/app
+    command: python main.py
+    networks:
+      - smartshop-network
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: smartshop-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    networks:
+      - smartshop-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  smartshop-network:
+    driver: bridge
