@@ -1,0 +1,21 @@
+{
+  "sample_interactions": [
+    {"user_id": 1, "product_id": 101, "rating": 5.0},
+    {"user_id": 1, "product_id": 102, "rating": 4.0},
+    {"user_id": 2, "product_id": 102, "rating": 5.0},
+    {"user_id": 2, "product_id": 103, "rating": 3.0},
+    {"user_id": 3, "product_id": 101, "rating": 4.0},
+    {"user_id": 3, "product_id": 104, "rating": 5.0},
+    {"user_id": 4, "product_id": 102, "rating": 4.0},
+    {"user_id": 4, "product_id": 105, "rating": 5.0},
+    {"user_id": 5, "product_id": 103, "rating": 4.0},
+    {"user_id": 5, "product_id": 104, "rating": 5.0}
+  ],
+  "sample_products": [
+    {"id": 101, "name": "Laptop", "price": 1200, "category": "Electronics"},
+    {"id": 102, "name": "Headphones", "price": 150, "category": "Audio"},
+    {"id": 103, "name": "Phone", "price": 800, "category": "Electronics"},
+    {"id": 104, "name": "Tablet", "price": 500, "category": "Electronics"},
+    {"id": 105, "name": "Smart Watch", "price": 300, "category": "Wearables"}
+  ]
+}
